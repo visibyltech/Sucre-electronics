@@ -1,0 +1,6 @@
+{
+  "name": "SUCRE ELECTRONICS",
+  "description": "Official online store for SUCRE ELECTRONICS in Warri, Delta State, Nigeria. Shop Televisions, Refrigerators, Freezers, Air Conditioners, Generators & Home Appliances with Pay Now, Save to Buy (Pay Small Small), and Credibly Buy Now Pay Later.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
