@@ -23,7 +23,48 @@ import washerSlide from '../assets/images/prod_washing_machine_1794993278894.jpg
 import soundSlide from '../assets/images/prod_sound_system_1794993279759.jpg';
 import kitchenSlide from '../assets/images/prod_kitchen_appliances_1794993281365.jpg';
 
-const heroSlides = [tvSlide, fridgeSlide, freezerSlide, acSlide, generatorSlide, washerSlide, soundSl      {/* 1. HERO BANNER — original copy retained, product slideshow behind it */}
+const heroSlides = [tvSlide, fridgeSlide, freezerSlide, acSlide, generatorSlide, washerSlide, soundSlide, kitchenSlide];
+
+function HeroBackgroundSlideshow() {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setActive((current) => (current + 1) % heroSlides.length), 4000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return (
+    <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+      {heroSlides.map((image, index) => (
+        <img key={image} src={image} alt="" className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${active === index ? 'opacity-100' : 'opacity-0'}`} />
+      ))}
+      <div className="absolute inset-0 bg-[#09090B]/65" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#09090B]/90 via-[#09090B]/55 to-[#09090B]/15" />
+    </div>
+  );
+}
+
+
+export function HomePage() {
+  const { categories } = useStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.products)) setProducts(d.products);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const featuredProducts = products.filter((p) => p.isFeatured);
+  const bestSellers = products.filter((p) => p.isBestSeller);
+  const newArrivals = products.filter((p) => p.isNewArrival);
+  const specialDeals = products.filter((p) => p.isSpecialDeal || (p.discountPrice && p.discountPrice < p.price));
+
+  return (
+    <div className="bg-white">
+      {/* 1. HERO BANNER — slideshow behind original write-up */}
       <section className="relative bg-[#09090B] text-white overflow-hidden">
         <HeroBackgroundSlideshow />
         <div className="relative z-10 max-w-[1360px] mx-auto min-h-[420px] sm:min-h-[460px] lg:min-h-[500px] flex items-center">
@@ -35,38 +76,6 @@ const heroSlides = [tvSlide, fridgeSlide, freezerSlide, acSlide, generatorSlide,
               <Link to="/shop" className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-[#F5C518] text-zinc-950 font-bold text-xs sm:text-sm hover:bg-[#E0B00B] transition-colors whitespace-nowrap"><span>Shop All Electronics</span><ArrowRight className="w-3.5 h-3.5" /></Link>
               <Link to="/save-to-buy" className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg border border-white/35 bg-black/35 backdrop-blur-sm text-white font-semibold text-xs sm:text-sm hover:border-[#F5C518] hover:text-[#F5C518] transition-colors whitespace-nowrap"><PiggyBank className="w-3.5 h-3.5 text-[#F5C518]" /><span>Save to Buy — 30% Deposit</span></Link>
             </div>
-          </div>
-        </div>
-      </section>
-
-ough Credibly.
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-3.5">
-              <Link
-                to="/shop"
-                className="inline-flex items-center gap-2 px-6 py-3.5 min-h-[48px] rounded-lg bg-[#F5C518] text-zinc-950 font-bold text-sm hover:bg-[#E0B00B] transition-colors whitespace-nowrap"
-              >
-                <span>Shop All Electronics</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to="/save-to-buy"
-                className="inline-flex items-center gap-2 px-6 py-3.5 min-h-[48px] rounded-lg border border-zinc-700 bg-[#141418] text-white font-semibold text-sm hover:border-[#F5C518] hover:text-[#F5C518] transition-colors whitespace-nowrap"
-              >
-                <PiggyBank className="w-4 h-4 text-[#F5C518]" />
-                <span>Save to Buy — 30% Deposit</span>
-              </Link>
-            </div>
-          </div>
-
-          <div className="lg:col-span-6 relative min-h-[260px] sm:min-h-[340px] lg:min-h-full">
-            <img
-              src={HERO_SHOWROOM_URL}
-              alt="SUCRE ELECTRONICS showroom display featuring 4K TV, soundbar, and inverter refrigerator"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#09090B] lg:via-[#09090B]/25 lg:to-transparent" />
           </div>
         </div>
       </section>
