@@ -23,77 +23,60 @@ import washerSlide from '../assets/images/prod_washing_machine_1794993278894.jpg
 import soundSlide from '../assets/images/prod_sound_system_1794993279759.jpg';
 import kitchenSlide from '../assets/images/prod_kitchen_appliances_1794993281365.jpg';
 
-const heroSlides = [
-  { image: tvSlide, label: 'Premium televisions' },
-  { image: fridgeSlide, label: 'Modern refrigerators' },
-  { image: freezerSlide, label: 'Chest freezers' },
-  { image: acSlide, label: 'Air conditioners' },
-  { image: generatorSlide, label: 'Generators' },
-  { image: washerSlide, label: 'Washing machines' },
-  { image: soundSlide, label: 'Sound systems' },
-  { image: kitchenSlide, label: 'Kitchen appliances' },
-];
-
-function HeroProductSlideshow() {
-  const [active, setActive] = useState(0);
-  useEffect(() => {
-    const timer = window.setInterval(() => setActive((current) => (current + 1) % heroSlides.length), 4000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return (
-    <div className="relative w-full h-[220px] sm:h-[300px] lg:h-[390px] rounded-xl overflow-hidden bg-[#151515]">
-      {heroSlides.map((slide, index) => (
-        <img key={slide.label} src={slide.image} alt={slide.label} className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${index === active ? 'opacity-100' : 'opacity-0'}`} loading={index === 0 ? 'eager' : 'lazy'} />
-      ))}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10 pointer-events-none" />
-      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-        <span className="text-white text-xs sm:text-sm font-semibold drop-shadow-md">{heroSlides[active].label}</span>
-        <div className="flex gap-1.5">{heroSlides.map((slide, index) => <button key={slide.label} type="button" aria-label={`Show ${slide.label}`} onClick={() => setActive(index)} className={`h-2 rounded-full transition-all ${index === active ? 'w-5 bg-[#F5C518]' : 'w-2 bg-white/70'}`} />)}</div>
-      </div>
-    </div>
-  );
-}
-
-export function HomePage() {
-  const { categories } = useStore();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/products')
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d.products)) setProducts(d.products);
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const featuredProducts = products.filter((p) => p.isFeatured);
-  const bestSellers = products.filter((p) => p.isBestSeller);
-  const newArrivals = products.filter((p) => p.isNewArrival);
-  const specialDeals = products.filter((p) => p.isSpecialDeal || (p.discountPrice && p.discountPrice < p.price));
-
-  return (
-    <div className="bg-white">
-      {/* 1. COMPACT HERO: actions then product slideshow */}
-      <section className="bg-[#09090B] text-white overflow-hidden">
-        <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-5 sm:pt-7 sm:pb-7">
-          <p className="text-[11px] sm:text-xs font-medium text-[#F5C518] tracking-wide mb-2">Warri, Delta State · Genuine Electronics Showroom</p>
-          <h1 className="font-display text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-white leading-tight mb-3">Electronics for Every Home</h1>
-          <div className="flex flex-row items-center gap-2 mb-4">
-            <Link to="/shop" className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-lg bg-[#F5C518] text-zinc-950 font-bold text-xs sm:text-sm hover:bg-[#E0B00B] transition-colors whitespace-nowrap"><span>Shop Electronics</span><ArrowRight className="w-3.5 h-3.5" /></Link>
-            <Link to="/save-to-buy" className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 min-h-[40px] rounded-lg border border-zinc-700 bg-[#141418] text-white font-semibold text-xs sm:text-sm hover:border-[#F5C518] hover:text-[#F5C518] transition-colors whitespace-nowrap"><PiggyBank className="w-3.5 h-3.5 text-[#F5C518]" /><span>Pay Small Small</span></Link>
+const heroSlides = [tvSlide, fridgeSlide, freezerSlide, acSlide, generatorSlide, washerSlide, soundSl      {/* 1. HERO BANNER — original copy retained, product slideshow behind it */}
+      <section className="relative bg-[#09090B] text-white overflow-hidden">
+        <HeroBackgroundSlideshow />
+        <div className="relative z-10 max-w-[1360px] mx-auto min-h-[420px] sm:min-h-[460px] lg:min-h-[500px] flex items-center">
+          <div className="w-full lg:max-w-[760px] px-4 sm:px-6 lg:px-8 py-9 sm:py-12 lg:py-14 flex flex-col justify-center">
+            <p className="text-xs sm:text-sm font-medium text-[#F5C518] tracking-wide mb-3">Warri, Delta State · Genuine Electronics Showroom</p>
+            <h1 className="font-display text-3xl sm:text-5xl lg:text-[52px] font-extrabold tracking-tight leading-[1.08] text-white [text-wrap:balance]">Premium Electronics Built for Modern Nigerian Homes</h1>
+            <p className="mt-4 sm:mt-5 text-sm sm:text-base text-zinc-200 max-w-xl leading-relaxed">Shop 4K QLED TVs, inverter refrigerators, deep freezers, copper-coil generators, and home appliances. Pay in full by bank transfer, reserve gradually with Save to Buy, or finance through Credibly.</p>
+            <div className="mt-6 sm:mt-7 flex flex-row flex-wrap items-center gap-2.5">
+              <Link to="/shop" className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg bg-[#F5C518] text-zinc-950 font-bold text-xs sm:text-sm hover:bg-[#E0B00B] transition-colors whitespace-nowrap"><span>Shop All Electronics</span><ArrowRight className="w-3.5 h-3.5" /></Link>
+              <Link to="/save-to-buy" className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[38px] rounded-lg border border-white/35 bg-black/35 backdrop-blur-sm text-white font-semibold text-xs sm:text-sm hover:border-[#F5C518] hover:text-[#F5C518] transition-colors whitespace-nowrap"><PiggyBank className="w-3.5 h-3.5 text-[#F5C518]" /><span>Save to Buy — 30% Deposit</span></Link>
+            </div>
           </div>
-          <HeroProductSlideshow />
+        </div>
+      </section>
+
+ough Credibly.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3.5">
+              <Link
+                to="/shop"
+                className="inline-flex items-center gap-2 px-6 py-3.5 min-h-[48px] rounded-lg bg-[#F5C518] text-zinc-950 font-bold text-sm hover:bg-[#E0B00B] transition-colors whitespace-nowrap"
+              >
+                <span>Shop All Electronics</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                to="/save-to-buy"
+                className="inline-flex items-center gap-2 px-6 py-3.5 min-h-[48px] rounded-lg border border-zinc-700 bg-[#141418] text-white font-semibold text-sm hover:border-[#F5C518] hover:text-[#F5C518] transition-colors whitespace-nowrap"
+              >
+                <PiggyBank className="w-4 h-4 text-[#F5C518]" />
+                <span>Save to Buy — 30% Deposit</span>
+              </Link>
+            </div>
+          </div>
+
+          <div className="lg:col-span-6 relative min-h-[260px] sm:min-h-[340px] lg:min-h-full">
+            <img
+              src={HERO_SHOWROOM_URL}
+              alt="SUCRE ELECTRONICS showroom display featuring 4K TV, soundbar, and inverter refrigerator"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#09090B] via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#09090B] lg:via-[#09090B]/25 lg:to-transparent" />
+          </div>
         </div>
       </section>
 
       {/* 2. PRODUCT CATEGORIES (Horizontal Swipe on Mobile + Clean Grid on Desktop) */}
-      <section className="py-5 sm:py-6 bg-zinc-50 border-b border-zinc-200">
+      <section className="py-10 sm:py-12 bg-zinc-50 border-b border-zinc-200">
         <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-end justify-between gap-4 mb-3">
+          <div className="flex items-end justify-between gap-4 mb-6">
             <div>
-              <h2 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-zinc-950">
+              <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950">
                 Shop by Category
               </h2>
               <p className="mt-1 text-sm text-zinc-600">
@@ -114,7 +97,7 @@ export function HomePage() {
               <Link
                 key={cat.id}
                 to={`/category/${cat.slug}`}
-                className="group w-[126px] lg:w-auto shrink-0 snap-start bg-white border border-zinc-200 rounded-xl overflow-hidden hover:border-zinc-950 hover:shadow-md transition-all"
+                className="group w-[156px] lg:w-auto shrink-0 snap-start bg-white border border-zinc-200 rounded-xl overflow-hidden hover:border-zinc-950 hover:shadow-md transition-all"
               >
                 <div className="aspect-[4/3] w-full bg-zinc-100 overflow-hidden">
                   {cat.image_url && (
