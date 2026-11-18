@@ -42,12 +42,16 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
 
   return (
     <article
-      className={`group flex flex-col justify-between bg-white border border-zinc-200/90 rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:border-zinc-300 ${
-        compact ? 'w-[218px] sm:w-[238px] shrink-0 snap-start' : 'w-full'
+      className={`group flex flex-col justify-between bg-white border border-zinc-200/90 rounded-xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-zinc-300 ${
+        compact ? 'w-[196px] sm:w-[224px] shrink-0 snap-start' : 'w-full'
       }`}
     >
       <Link to={`/product/${product.slug}`} className="block focus:outline-none">
-        <div className="relative aspect-[5/4] w-full bg-zinc-100 overflow-hidden">
+        <div
+          className={`relative w-full bg-zinc-100 overflow-hidden ${
+            compact ? 'h-[124px] sm:h-[142px]' : 'aspect-[16/10]'
+          }`}
+        >
           {!imgFailed && product.images[0] ? (
             <img
               src={product.images[0]}
@@ -58,61 +62,65 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-500 p-4 text-center">
-              <Cpu className="w-8 h-8 mb-2 text-zinc-400" />
-              <span className="text-xs font-medium text-zinc-600 line-clamp-2">{product.name}</span>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-200 text-zinc-500 p-3 text-center">
+              <Cpu className="w-6 h-6 mb-1.5 text-zinc-400" />
+              <span className="text-[11px] font-medium text-zinc-600 line-clamp-2">{product.name}</span>
             </div>
           )}
         </div>
 
-        <div className="p-3 pb-1.5">
-          <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-1.5 truncate">
-            <span className="font-medium text-zinc-700">{product.brand}</span>
+        <div className="px-3 pt-2.5 pb-1.5">
+          <div className="flex items-center gap-1 text-[11px] text-zinc-500 mb-1 truncate">
+            <span className="font-medium text-zinc-700 truncate">{product.brand}</span>
             <span aria-hidden="true">·</span>
-            <span className={outOfStock ? 'text-red-600 font-medium' : 'text-emerald-700 font-medium'}>
-              {product.availability}
+            <span
+              className={`truncate font-medium ${
+                outOfStock ? 'text-red-600' : 'text-emerald-700'
+              }`}
+            >
+              {outOfStock ? 'Out of Stock' : 'In Stock'}
             </span>
           </div>
 
-          <h3 className="font-display text-[14px] font-semibold text-zinc-950 leading-snug line-clamp-2 min-h-[2.3rem] group-hover:text-zinc-700 transition-colors">
+          <h3 className="font-display text-[13px] sm:text-sm font-semibold text-zinc-950 leading-snug line-clamp-2 min-h-[2.3rem] group-hover:text-zinc-700 transition-colors">
             {product.name}
           </h3>
 
           <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
-            <span className="font-mono text-sm font-semibold text-zinc-950 tabular-nums">
+            <span className="font-mono text-sm sm:text-[15px] font-bold text-zinc-950 tabular-nums">
               {formatNaira(product.effectivePrice)}
             </span>
             {hasDiscount && (
-              <span className="font-mono text-xs text-zinc-400 line-through tabular-nums">
+              <span className="font-mono text-[11px] text-zinc-400 line-through tabular-nums">
                 {formatNaira(product.price)}
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-zinc-500 tabular-nums">
+          <p className="mt-0.5 text-[11px] text-zinc-500 tabular-nums truncate">
             30% deposit: {formatNaira(Math.ceil(product.effectivePrice * 0.3))}
           </p>
         </div>
       </Link>
 
-      <div className="p-3 pt-1.5 flex flex-col gap-1.5">
-        <div className="grid grid-cols-2 gap-2">
+      <div className="px-3 pb-3 pt-1.5 flex flex-col gap-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
           <button
             type="button"
             disabled={outOfStock}
             onClick={handleAddToCart}
-            className="inline-flex items-center justify-center gap-1.5 px-2 py-2 min-h-[36px] text-[11px] font-semibold rounded-lg border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 active:scale-[0.99] transition-all disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+            className="inline-flex items-center justify-center gap-1 px-2 py-1.5 min-h-[34px] text-[11px] font-semibold rounded-md border border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50 active:scale-[0.99] transition-all disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
           >
-            <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
-            <span>Add to Cart</span>
+            <ShoppingBag className="w-3 h-3 shrink-0" />
+            <span>Add</span>
           </button>
 
           <button
             type="button"
             disabled={outOfStock}
             onClick={handleBuyNow}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[40px] text-xs font-semibold rounded-lg bg-[#09090B] text-white hover:bg-zinc-800 active:scale-[0.99] transition-all disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+            className="inline-flex items-center justify-center gap-1 px-2 py-1.5 min-h-[34px] text-[11px] font-semibold rounded-md bg-[#09090B] text-white hover:bg-zinc-800 active:scale-[0.99] transition-all disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
           >
-            <Zap className="w-3.5 h-3.5 text-[#F5C518] shrink-0" />
+            <Zap className="w-3 h-3 text-[#F5C518] shrink-0" />
             <span>Buy Now</span>
           </button>
         </div>
@@ -121,7 +129,7 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
           type="button"
           disabled={outOfStock}
           onClick={handlePaySmallSmall}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-2 py-1.5 min-h-[34px] text-[11px] font-semibold rounded-lg bg-[#F5C518] text-zinc-950 hover:bg-[#E0B00B] active:scale-[0.99] transition-all disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+          className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 min-h-[32px] text-[11px] font-semibold rounded-md bg-[#F5C518] text-zinc-950 hover:bg-[#E0B00B] active:scale-[0.99] transition-all disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
         >
           <PiggyBank className="w-3.5 h-3.5 shrink-0" />
           <span>Pay Small Small</span>

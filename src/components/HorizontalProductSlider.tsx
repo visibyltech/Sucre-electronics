@@ -6,7 +6,7 @@ import { ProductCard } from './ProductCard';
 
 interface HorizontalProductSliderProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   products: Product[];
   viewAllLink: string;
   viewAllLabel?: string;
@@ -26,7 +26,7 @@ export function HorizontalProductSlider({
   const scrollByAmount = (direction: 'left' | 'right') => {
     const el = trackRef.current;
     if (!el) return;
-    const distance = Math.min(el.clientWidth * 0.85, 640);
+    const distance = Math.min(el.clientWidth * 0.8, 560);
     el.scrollBy({
       left: direction === 'left' ? -distance : distance,
       behavior: 'smooth',
@@ -36,7 +36,6 @@ export function HorizontalProductSlider({
   const handleMouseDown = (e: React.MouseEvent) => {
     const el = trackRef.current;
     if (!el) return;
-    // Do not hijack clicks on interactive buttons or links
     if ((e.target as HTMLElement).closest('button, a')) return;
     setIsDragging(true);
     dragState.current = {
@@ -62,42 +61,44 @@ export function HorizontalProductSlider({
   if (products.length === 0) return null;
 
   return (
-    <section className="py-10 sm:py-12 border-b border-zinc-100 last:border-b-0">
+    <section className="py-5 sm:py-7 border-b border-zinc-100 last:border-b-0">
       <div className="max-w-[1360px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between gap-4 mb-6">
-          <div>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950">
+        <div className="flex items-center justify-between gap-3 mb-3.5">
+          <div className="min-w-0">
+            <h2 className="font-display text-lg sm:text-2xl font-bold tracking-tight text-zinc-950 truncate">
               {title}
             </h2>
-            <p className="mt-1 text-sm text-zinc-600">{subtitle}</p>
+            {subtitle && (
+              <p className="text-xs sm:text-sm text-zinc-500 truncate mt-0.5">{subtitle}</p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden md:flex items-center gap-1.5 mr-2">
+            <div className="hidden md:flex items-center gap-1.5 mr-1">
               <button
                 type="button"
                 aria-label={`Scroll ${title} left`}
                 onClick={() => scrollByAmount('left')}
-                className="w-10 h-10 rounded-lg border border-zinc-300 bg-white text-zinc-800 flex items-center justify-center hover:bg-zinc-100 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-zinc-300 bg-white text-zinc-800 flex items-center justify-center hover:bg-zinc-100 transition-colors cursor-pointer"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 aria-label={`Scroll ${title} right`}
                 onClick={() => scrollByAmount('right')}
-                className="w-10 h-10 rounded-lg border border-zinc-300 bg-white text-zinc-800 flex items-center justify-center hover:bg-zinc-100 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-zinc-300 bg-white text-zinc-800 flex items-center justify-center hover:bg-zinc-100 transition-colors cursor-pointer"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
             <Link
               to={viewAllLink}
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-zinc-950 hover:text-[#B88D00] transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-zinc-950 hover:text-[#B88D00] transition-colors whitespace-nowrap"
             >
               <span>{viewAllLabel}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Link>
           </div>
         </div>
@@ -108,7 +109,7 @@ export function HorizontalProductSlider({
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUpOrLeave}
           onMouseLeave={handleMouseUpOrLeave}
-          className={`flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pb-2 select-none ${
+          className={`flex gap-3 sm:gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory scroll-smooth pb-1.5 select-none ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab md:cursor-default'
           }`}
         >
