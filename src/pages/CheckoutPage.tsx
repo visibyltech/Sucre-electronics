@@ -6,6 +6,7 @@ import { formatNaira, formatOrderStatus } from '../lib/format';
 import { BackBar } from '../components/Layout';
 import { ReceiptUploadForm } from '../components/ReceiptUploadForm';
 import type { Order } from '../types';
+import { createOrderResilient } from '../lib/api';
 
 export function CheckoutPage() {
   const { cart, cartSubtotal, clearCart, user, token, paymentConfig, showToast } = useStore();
@@ -59,13 +60,8 @@ export function CheckoutPage() {
 
     setSubmitting(true);
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
+      const result = await createOrderResilient(
+        {
           customerName: customerName.trim(),
           customerPhone: customerPhone.trim(),
           customerEmail: customerEmail.trim(),
@@ -74,17 +70,17 @@ export function CheckoutPage() {
           bankSelected,
           notes: notes.trim(),
           items: cart.map((c) => ({ productId: c.productId, quantity: c.quantity })),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Could not place order.');
+        },
+        token
+      );
+      if (!result.ok || !result.order) {
+        setError(result.error || 'Could not place order.');
         return;
       }
 
-      setCreatedOrder(data.order);
+      setCreatedOrder(result.order);
       clearCart();
-      showToast(`Order ${data.order.order_ref} created. Please complete your bank transfer.`);
+      showToast(`Order ${result.order.order_ref} created. Please complete your bank transfer.`);
     } catch {
       setError('Network error while creating your order. Please try again.');
     } finally {

@@ -16,6 +16,7 @@ import { formatNaira, buildWhatsAppUrl } from '../lib/format';
 import { useStore } from '../context/StoreContext';
 import { BackBar } from '../components/Layout';
 import { HorizontalProductSlider } from '../components/HorizontalProductSlider';
+import { fetchProductBySlug } from '../lib/api';
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -36,15 +37,14 @@ export function ProductDetailPage() {
     setActiveImgIdx(0);
     setQuantity(1);
 
-    fetch(`/api/products/${encodeURIComponent(slug)}`)
-      .then(async (r) => {
-        if (!r.ok) {
+    fetchProductBySlug(slug)
+      .then(({ product: found, related: rel }) => {
+        if (!found) {
           setNotFound(true);
           return;
         }
-        const data = await r.json();
-        setProduct(data.product);
-        setRelated(data.related || []);
+        setProduct(found);
+        setRelated(rel);
       })
       .finally(() => setLoading(false));
   }, [slug]);

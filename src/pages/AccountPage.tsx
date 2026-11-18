@@ -5,6 +5,12 @@ import { useStore } from '../context/StoreContext';
 import type { Order, PaymentReceipt, SaveToBuyPlan } from '../types';
 import { formatBnplStatus, formatDate, formatNaira, formatOrderStatus } from '../lib/format';
 import { BackBar } from '../components/Layout';
+import {
+  getLocalOrders,
+  getLocalReceipts,
+  getLocalSavedPlans,
+  safeFetchJson,
+} from '../lib/api';
 
 export function AccountPage() {
   const { user, token, authLoading, loginWithToken, logout, refreshUser, showToast } = useStore();
@@ -37,17 +43,22 @@ export function AccountPage() {
   }, [user]);
 
   useEffect(() => {
-    if (!token || !user) return;
+    if (!token || !user) {
+      setOrders(getLocalOrders());
+      setPlans(getLocalSavedPlans());
+      setReceipts(getLocalReceipts());
+      return;
+    }
     const headers = { Authorization: `Bearer ${token}` };
     Promise.all([
-      fetch('/api/my/orders', { headers }).then((r) => r.json()),
-      fetch('/api/my/save-to-buy', { headers }).then((r) => r.json()),
-      fetch('/api/my/receipts', { headers }).then((r) => r.json()),
+      safeFetchJson('/api/my/orders', { headers }),
+      safeFetchJson('/api/my/save-to-buy', { headers }),
+      safeFetchJson('/api/my/receipts', { headers }),
     ])
       .then(([o, p, r]) => {
-        setOrders(o.orders || []);
-        setPlans(p.plans || []);
-        setReceipts(r.receipts || []);
+        setOrders(o?.ok ? o.data?.orders || [] : getLocalOrders());
+        setPlans(p?.ok ? p.data?.plans || [] : getLocalSavedPlans());
+        setReceipts(r?.ok ? r.data?.receipts || [] : getLocalReceipts());
       })
       .catch(() => {});
   }, [token, user]);
@@ -63,18 +74,25 @@ export function AccountPage() {
           ? { email, password }
           : { fullName, email, phone, address, password };
 
-      const res = await fetch(endpoint, {
+      const res = await safeFetchJson(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Authentication failed.');
+      if (!res) {
+        setError(
+          'Customer account sign-in requires the live backend server. You can continue shopping, creating Save to Buy plans, and uploading receipts directly on this page.'
+        );
         return;
       }
-      loginWithToken(data.token, data.user);
-      showToast(mode === 'login' ? `Welcome back, ${data.user.fullName}.` : 'Account created successfully!');
+      if (!res.ok) {
+        setError(res.data?.error || 'Authentication failed.');
+        return;
+      }
+      loginWithToken(res.data.token, res.data.user);
+      showToast(
+        mode === 'login' ? `Welcome back, ${res.data.user.fullName}.` : 'Account created successfully!'
+      );
     } catch {
       setError('Network error. Please try again.');
     } finally {
@@ -85,7 +103,7 @@ export function AccountPage() {
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
-    const res = await fetch('/api/auth/profile', {
+    const res = await safeFetchJson('/api/auth/profile', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -93,9 +111,11 @@ export function AccountPage() {
       },
       body: JSON.stringify({ fullName: profName, phone: profPhone, address: profAddress }),
     });
-    if (res.ok) {
+    if (res?.ok) {
       await refreshUser();
       showToast('Profile updated.');
+    } else {
+      showToast('Unable to update profile on static hosting.', 'error');
     }
   };
 

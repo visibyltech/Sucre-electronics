@@ -6,6 +6,12 @@ import type { Product, SaveToBuyPlan } from '../types';
 import { formatDate, formatNaira } from '../lib/format';
 import { BackBar } from '../components/Layout';
 import { ReceiptUploadForm } from '../components/ReceiptUploadForm';
+import {
+  createSaveToBuyResilient,
+  fetchProducts,
+  getLocalSavedPlans,
+  lookupRefResilient,
+} from '../lib/api';
 
 export function SaveToBuyPage() {
   const [searchParams] = useSearchParams();
@@ -32,17 +38,13 @@ export function SaveToBuyPage() {
   const [copiedBank, setCopiedBank] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/products')
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d.products)) {
-          const inStock = d.products.filter((p: Product) => p.stock > 0);
-          setProducts(inStock);
-          if (!selectedSlug && inStock.length > 0) {
-            setSelectedSlug(inStock[0].slug);
-          }
-        }
-      });
+    fetchProducts().then((list) => {
+      const inStock = list.filter((p) => p.stock > 0);
+      setProducts(inStock);
+      if (!selectedSlug && inStock.length > 0) {
+        setSelectedSlug(inStock[0].slug);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -50,14 +52,22 @@ export function SaveToBuyPage() {
   }, [initialProductSlug]);
 
   const loadMyPlans = async () => {
-    if (!token) return;
-    const res = await fetch('/api/my/save-to-buy', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setMyPlans(data.plans || []);
+    if (token) {
+      try {
+        const res = await fetch('/api/my/save-to-buy', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
+          const data = await res.json();
+          setMyPlans(data.plans || []);
+          return;
+        }
+      } catch {
+        // fall through to local plans
+      }
     }
+    setMyPlans(getLocalSavedPlans());
   };
 
   useEffect(() => {
@@ -106,13 +116,8 @@ export function SaveToBuyPage() {
 
     setCreating(true);
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
-      const res = await fetch('/api/save-to-buy', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
+      const result = await createSaveToBuyResilient(
+        {
           productId: selectedProduct.id,
           customerName: customerName.trim(),
           customerPhone: customerPhone.trim(),
@@ -121,17 +126,17 @@ export function SaveToBuyPage() {
           initialDepositPercent: depositPercent,
           durationMonths,
           frequency,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Could not create Save to Buy plan.');
+        },
+        token
+      );
+      if (!result.ok || !result.plan) {
+        setError(result.error || 'Could not create Save to Buy plan.');
         return;
       }
 
-      setActivePlan(data.plan);
-      setUploadingForPlan(data.plan);
-      showToast(`Save to Buy Plan ${data.plan.plan_ref} created!`);
+      setActivePlan(result.plan);
+      setUploadingForPlan(result.plan);
+      showToast(`Save to Buy Plan ${result.plan.plan_ref} created!`);
       loadMyPlans();
     } catch {
       setError('Network error while creating Save to Buy plan.');
@@ -143,13 +148,12 @@ export function SaveToBuyPage() {
   const handleLookupPlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!lookupRef.trim()) return;
-    const res = await fetch(`/api/save-to-buy/lookup/${encodeURIComponent(lookupRef.trim().toUpperCase())}`);
-    const data = await res.json();
-    if (!res.ok) {
-      showToast(data.error || 'Plan reference not found.', 'error');
+    const found = await lookupRefResilient(lookupRef);
+    if (!found || !found.plan_ref) {
+      showToast('Plan reference not found.', 'error');
       return;
     }
-    setActivePlan(data.plan);
+    setActivePlan(found);
     setUploadingForPlan(null);
   };
 

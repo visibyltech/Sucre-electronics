@@ -3,6 +3,7 @@ import { Upload, CheckCircle2, FileText, AlertCircle } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { formatNaira } from '../lib/format';
 import type { PaymentReceipt } from '../types';
+import { submitReceiptResilient } from '../lib/api';
 
 interface ReceiptUploadFormProps {
   defaultReference?: string;
@@ -72,23 +73,15 @@ export function ReceiptUploadForm({
       formData.append('notes', notes.trim());
       formData.append('receipt', file);
 
-      const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
-
-      const res = await fetch('/api/receipts', {
-        method: 'POST',
-        headers,
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Could not upload receipt.');
+      const result = await submitReceiptResilient(formData, file, token);
+      if (!result.ok || !result.receipt) {
+        setError(result.error || 'Could not upload receipt.');
         return;
       }
 
-      setSubmittedReceipt(data.receipt);
+      setSubmittedReceipt(result.receipt);
       showToast('Payment receipt uploaded and received for verification.');
-      onSuccess?.(data.receipt);
+      onSuccess?.(result.receipt);
     } catch {
       setError('Network error while uploading receipt. Please try again.');
     } finally {

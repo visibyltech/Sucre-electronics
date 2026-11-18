@@ -5,6 +5,7 @@ import { useStore } from '../context/StoreContext';
 import type { Order, Product } from '../types';
 import { formatBnplStatus, formatNaira, buildWhatsAppUrl } from '../lib/format';
 import { BackBar } from '../components/Layout';
+import { fetchProducts, initiateBnplResilient, lookupRefResilient } from '../lib/api';
 
 export function BnplPage() {
   const [searchParams] = useSearchParams();
@@ -31,27 +32,26 @@ export function BnplPage() {
 
   useEffect(() => {
     fetch('/api/bnpl/status')
-      .then((r) => r.json())
-      .then((d) => setCrediblyConfigured(Boolean(d.configured)));
+      .then(async (r) => {
+        const ct = r.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) return { configured: false };
+        return r.json();
+      })
+      .then((d) => setCrediblyConfigured(Boolean(d.configured)))
+      .catch(() => setCrediblyConfigured(false));
 
-    fetch('/api/products?bnpl=1')
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d.products)) {
-          const eligible = d.products.filter((p: Product) => p.stock > 0);
-          setProducts(eligible);
-          if (!selectedSlug && eligible.length > 0) setSelectedSlug(eligible[0].slug);
-        }
-      });
+    fetchProducts({ bnpl: true }).then((list) => {
+      const eligible = list.filter((p) => p.stock > 0);
+      setProducts(eligible);
+      if (!selectedSlug && eligible.length > 0) setSelectedSlug(eligible[0].slug);
+    });
   }, []);
 
   useEffect(() => {
     if (returnedOrderRef) {
-      fetch(`/api/orders/lookup/${encodeURIComponent(returnedOrderRef)}`)
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.order) setBnplOrder(d.order);
-        });
+      lookupRefResilient(returnedOrderRef).then((found) => {
+        if (found && found.order_ref) setBnplOrder(found);
+      });
     }
   }, [returnedOrderRef]);
 
@@ -77,13 +77,8 @@ export function BnplPage() {
 
     setSubmitting(true);
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers.Authorization = `Bearer ${token}`;
-
-      const res = await fetch('/api/bnpl/initiate', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
+      const result = await initiateBnplResilient(
+        {
           productId: selectedProduct.id,
           quantity,
           customerName: customerName.trim(),
@@ -91,23 +86,25 @@ export function BnplPage() {
           customerEmail: customerEmail.trim(),
           deliveryMethod,
           deliveryAddress: deliveryAddress.trim(),
-        }),
-      });
+        },
+        token
+      );
 
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Could not initiate Credibly BNPL.');
+      if (!result.ok) {
+        setError(result.error || 'Could not initiate Credibly BNPL.');
         return;
       }
 
-      if (data.configured && data.redirectUrl) {
-        window.location.href = data.redirectUrl;
+      if (result.configured && result.redirectUrl) {
+        window.location.href = result.redirectUrl;
         return;
       }
 
-      setBnplOrder(data.order);
-      setServerNote(data.message || '');
-      showToast(`BNPL application ${data.order.order_ref} saved.`, 'info');
+      if (result.order) {
+        setBnplOrder(result.order);
+        showToast(`BNPL application ${result.order.order_ref} saved.`, 'info');
+      }
+      setServerNote(result.message || '');
     } catch {
       setError('Network error while connecting to Credibly financing service.');
     } finally {

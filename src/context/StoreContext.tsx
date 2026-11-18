@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { CartItem, Category, PaymentConfig, Product, User } from '../types';
+import { DEFAULT_PAYMENT_CONFIG, INITIAL_CATEGORIES } from '../data/catalog';
+import { fetchCategories, fetchPaymentConfig } from '../lib/api';
 
 interface ToastMessage {
   id: number;
@@ -53,8 +55,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(Boolean(token));
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
+  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(DEFAULT_PAYMENT_CONFIG);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   useEffect(() => {
@@ -66,19 +68,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [cart]);
 
   useEffect(() => {
-    fetch('/api/categories')
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d.categories)) setCategories(d.categories);
-      })
-      .catch(() => {});
-
-    fetch('/api/config/payment')
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.business) setPaymentConfig(d);
-      })
-      .catch(() => {});
+    fetchCategories().then(setCategories);
+    fetchPaymentConfig().then(setPaymentConfig);
   }, []);
 
   const refreshUser = async () => {
@@ -92,6 +83,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${activeToken}` },
       });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        setAuthLoading(false);
+        return;
+      }
       if (!res.ok) {
         localStorage.removeItem(TOKEN_STORAGE_KEY);
         setToken(null);

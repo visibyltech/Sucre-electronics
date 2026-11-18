@@ -22,6 +22,7 @@ import {
 } from '../lib/format';
 import { BackBar } from '../components/Layout';
 import { useStore } from '../context/StoreContext';
+import { submitContactResilient } from '../lib/api';
 
 export function ContactPage() {
   const { showToast } = useStore();
@@ -43,14 +44,9 @@ export function ContactPage() {
     }
     setSending(true);
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, subject, message }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Could not send message.');
+      const result = await submitContactResilient({ name, email, phone, subject, message });
+      if (!result.ok) {
+        setError(result.error || 'Could not send message.');
         return;
       }
       setSent(true);

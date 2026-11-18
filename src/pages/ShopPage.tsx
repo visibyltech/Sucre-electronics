@@ -5,6 +5,7 @@ import { useStore } from '../context/StoreContext';
 import type { Product } from '../types';
 import { ProductCard } from '../components/ProductCard';
 import { BackBar } from '../components/Layout';
+import { fetchProducts } from '../lib/api';
 
 export function CategoriesPage() {
   const { categories } = useStore();
@@ -83,20 +84,16 @@ export function ShopPage({ mode = 'shop' }: { mode?: 'shop' | 'category' | 'sear
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (selectedCategory !== 'all') params.set('category', selectedCategory);
-    if (queryInput.trim()) params.set('search', queryInput.trim());
-    if (filterParam === 'featured') params.set('featured', '1');
-    if (filterParam === 'best_seller') params.set('best_seller', '1');
-    if (filterParam === 'new_arrival') params.set('new_arrival', '1');
-    if (filterParam === 'special_deal') params.set('special_deal', '1');
-    params.set('sort', sortBy);
-
-    fetch(`/api/products?${params.toString()}`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d.products)) setProducts(d.products);
-      })
+    fetchProducts({
+      category: selectedCategory,
+      search: queryInput,
+      featured: filterParam === 'featured',
+      bestSeller: filterParam === 'best_seller',
+      newArrival: filterParam === 'new_arrival',
+      specialDeal: filterParam === 'special_deal',
+      sort: sortBy,
+    })
+      .then((list) => setProducts(list))
       .finally(() => setLoading(false));
   }, [selectedCategory, queryInput, filterParam, sortBy]);
 

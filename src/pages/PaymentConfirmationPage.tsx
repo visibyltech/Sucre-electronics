@@ -4,6 +4,7 @@ import { useStore } from '../context/StoreContext';
 import { formatNaira, formatOrderStatus } from '../lib/format';
 import { BackBar } from '../components/Layout';
 import { ReceiptUploadForm } from '../components/ReceiptUploadForm';
+import { lookupRefResilient } from '../lib/api';
 
 export function PaymentConfirmationPage() {
   const { paymentConfig, showToast } = useStore();
@@ -36,16 +37,12 @@ export function PaymentConfirmationPage() {
     if (!ref) return;
 
     try {
-      const endpoint = ref.startsWith('STB-')
-        ? `/api/save-to-buy/lookup/${encodeURIComponent(ref)}`
-        : `/api/orders/lookup/${encodeURIComponent(ref)}`;
-      const res = await fetch(endpoint);
-      const data = await res.json();
-      if (!res.ok) {
-        setLookupError(data.error || 'Reference not found.');
+      const found = await lookupRefResilient(ref);
+      if (!found) {
+        setLookupError('Reference not found.');
         return;
       }
-      setLookupResult(data.order || data.plan);
+      setLookupResult(found);
     } catch {
       setLookupError('Unable to verify reference right now.');
     }

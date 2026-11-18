@@ -15,6 +15,7 @@ import { useStore } from '../context/StoreContext';
 import type { Category, Order, PaymentReceipt, Product, SaveToBuyPlan } from '../types';
 import { formatBnplStatus, formatDate, formatNaira, formatOrderStatus } from '../lib/format';
 import { BackBar } from '../components/Layout';
+import { fetchCategories, fetchProducts, safeFetchJson } from '../lib/api';
 
 export function AdminDashboardPage() {
   const { user, token, loginWithToken, logout, showToast } = useStore();
@@ -50,21 +51,25 @@ export function AdminDashboardPage() {
     const headers = { Authorization: `Bearer ${token}` };
     try {
       const [ov, pr, ca, or, rc, pl, ms] = await Promise.all([
-        fetch('/api/admin/overview', { headers }).then((r) => r.json()),
-        fetch('/api/products').then((r) => r.json()),
-        fetch('/api/categories').then((r) => r.json()),
-        fetch('/api/admin/orders', { headers }).then((r) => r.json()),
-        fetch('/api/admin/receipts', { headers }).then((r) => r.json()),
-        fetch('/api/admin/save-to-buy', { headers }).then((r) => r.json()),
-        fetch('/api/admin/messages', { headers }).then((r) => r.json()),
+        safeFetchJson('/api/admin/overview', { headers }),
+        fetchProducts(),
+        fetchCategories(),
+        safeFetchJson('/api/admin/orders', { headers }),
+        safeFetchJson('/api/admin/receipts', { headers }),
+        safeFetchJson('/api/admin/save-to-buy', { headers }),
+        safeFetchJson('/api/admin/messages', { headers }),
       ]);
-      setCounts(ov.counts || {});
-      setProducts(pr.products || []);
-      setCategories(ca.categories || []);
-      setOrders(or.orders || []);
-      setReceipts(rc.receipts || []);
-      setPlans(pl.plans || []);
-      setMessages(ms.messages || []);
+      if (!ov) {
+        showToast('Live backend API is unavailable in static preview.', 'error');
+        return;
+      }
+      setCounts(ov.data?.counts || {});
+      setProducts(pr || []);
+      setCategories(ca || []);
+      setOrders(or?.data?.orders || []);
+      setReceipts(rc?.data?.receipts || []);
+      setPlans(pl?.data?.plans || []);
+      setMessages(ms?.data?.messages || []);
     } catch {
       showToast('Failed to load admin records.', 'error');
     }
@@ -79,21 +84,26 @@ export function AdminDashboardPage() {
     setAuthError('');
     setSigningIn(true);
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await safeFetchJson('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: adminEmail, password: adminPassword }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setAuthError(data.error || 'Invalid credentials.');
+      if (!res) {
+        setAuthError(
+          'Store administration requires the live Node.js + SQLite backend server (`npm run start`). Static deployments serve the storefront only.'
+        );
         return;
       }
-      if (data.user?.role !== 'admin') {
+      if (!res.ok) {
+        setAuthError(res.data?.error || 'Invalid credentials.');
+        return;
+      }
+      if (res.data?.user?.role !== 'admin') {
         setAuthError('This account does not have administrator privileges.');
         return;
       }
-      loginWithToken(data.token, data.user);
+      loginWithToken(res.data.token, res.data.user);
       showToast('Signed in to SUCRE ELECTRONICS Admin Dashboard.');
     } catch {
       setAuthError('Network error while signing in.');

@@ -15,6 +15,8 @@ import { useStore } from '../context/StoreContext';
 import type { Product } from '../types';
 import { DISPLAY_PHONE, buildWhatsAppUrl, formatNaira } from '../lib/format';
 import { HorizontalProductSlider } from '../components/HorizontalProductSlider';
+import { INITIAL_PRODUCTS } from '../data/catalog';
+import { fetchProducts } from '../lib/api';
 
 const HERO_SLIDES = [
   {
@@ -61,15 +63,14 @@ const HERO_SLIDES = [
 
 export function HomePage() {
   const { categories } = useStore();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [loading, setLoading] = useState(false);
   const [slideIdx, setSlideIdx] = useState(0);
 
   useEffect(() => {
-    fetch('/api/products')
-      .then((r) => r.json())
-      .then((d) => {
-        if (Array.isArray(d.products)) setProducts(d.products);
+    fetchProducts()
+      .then((list) => {
+        if (list.length > 0) setProducts(list);
       })
       .finally(() => setLoading(false));
   }, []);
